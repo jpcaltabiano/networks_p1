@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#include <string.h>
+#include <sys/time.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -12,7 +12,7 @@
 
 #define BUF_SIZE 1000
 
-char* options;
+char* options = "";
 char* url;
 char* port_num;
 
@@ -51,7 +51,6 @@ int main(int argc, char** argv) {
 
     char *host, *fpath;
     get_fpath(url, &host, &fpath);
-    printf("url: %s\nhost: %s\nfpath: %s\n", url, host, fpath);
 
     int status, sock, numbytes;
     struct addrinfo hints, *sinf;
@@ -60,6 +59,8 @@ int main(int argc, char** argv) {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
+
+    struct timeval start, end;
 
     //get address info, error checking
     if ((status = getaddrinfo(host, port_num, &hints, &sinf))) {
@@ -82,6 +83,8 @@ int main(int argc, char** argv) {
 
         break;
     }
+
+    if (strcmp(options, "-p") == 0) gettimeofday(&start, NULL);
     
     printf("client: connecting to %s\n", host);
 
@@ -154,6 +157,11 @@ int main(int argc, char** argv) {
 
     printf("\n");
     close(sock);
+
+    if (strcmp(options, "-p") == 0) {
+        gettimeofday(&end, NULL);
+        printf("RTT: %ld ms\n", (end.tv_usec - start.tv_usec) / 1000);
+    }
 
     return 0;
 }

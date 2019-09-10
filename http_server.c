@@ -15,10 +15,9 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#define PORT "3490"  // the port users will be connecting to
 #define BUF_SIZE 1000
 
-#define BACKLOG 10     // how many pending connections queue will hold
+#define BACKLOG 10 // how many pending connections queue will hold
 
 void sigchld_handler(int s)
 {
@@ -41,8 +40,16 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(void)
-{
+int main(int argc, char **argv) {
+
+    char *port;
+    if (argc == 2) {
+        port = argv[1];
+    } else {
+        printf("Use: [-p] url portnumber\n");
+        exit(1);
+    }
+
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
@@ -57,7 +64,7 @@ int main(void)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
 
-    if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
@@ -122,10 +129,8 @@ int main(void)
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
 
-            int size;
             char buf[BUF_SIZE];
             char header[BUF_SIZE];
-            char *method;
             char *filename;
             int content_length;
             FILE *fp;
@@ -134,8 +139,7 @@ int main(void)
 
             printf("buf: %s", buf);
 
-            method = strtok(buf, " ");
-            //if (strcmp(method, "GET") != 0) return;
+            strtok(buf, " ");
             filename = strtok(NULL, " ");
             if (filename[0] == '/') filename++;
             
@@ -152,9 +156,7 @@ int main(void)
             if ((send(new_fd, header, strlen(header), 0)) == -1) {
                 perror("send header");
             }
-            //filename = "files/TMDG.html";//strtok(NULL, " ");
-            
-            
+
             while (fgets(buf, BUF_SIZE, fp)) {
                 if ((send(new_fd, buf, strlen(buf), 0)) == -1) {
                     perror("send file");
@@ -162,50 +164,6 @@ int main(void)
                 memset(buf, 0, BUF_SIZE);
             }
 
-        //     FILE *fp = fopen("starter/Project_1_A19/TMDG.html", "r");
-        //     // int content_length;
-        //     // for (content_length = 0; getc(fp) != EOF; content_length++);
-        //     // printf("File Size: %d\n", content_length);
-        //     int content_length = 58327;
-
-
-
-
-
-        //     char header[1000];
-        //     sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", content_length);
-        //     char buf[1000];
-
-
-        //     // char header = ("HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", content_length);
-        //     // int header_length = strlen(header);
-        //     // char buf[header_length + content_length] = {'\0'};
-        //     // char content_buf = buf + header_length;
-
-            
-
-
-        //     //while(fgets(buf, 1000, header)) {
-        //         if ((send(new_fd, header, strlen(header), 0)) == -1) {
-        //             perror("send");
-        //         }
-        //         //memset(buf, 0, 1000);
-        //     //}
-
-
-
-        //     while(fgets(buf, 1000, fp)) {
-        //         if ((send(new_fd, buf, strlen(buf), 0)) == -1) {
-        //             perror("sendasdfas");
-        //         }
-        //         memset(buf, 0, 1000);
-        //     }
-
-
-
-            
-        //     // if (send(new_fd, "Hello, world!", 13, 0) == -1)
-        //     //     perror("send");
             close(new_fd);
             exit(0);
         }
