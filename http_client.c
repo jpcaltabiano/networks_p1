@@ -16,9 +16,19 @@ char* options;
 char* url;
 char* port_num;
 
-void send_GET(int client, char *url) {
+//parses the file after host in url
+//i.e. www.example.com/foo.html
+//host: example.com, fpath: foo.html
+void get_fpath(char *url, char **host, char **fpath) {
+    *host = strtok(url, "/");
+    *fpath = strtok(NULL, "");
+}
+
+//sends an HTTP get request
+void send_GET(int client, char *host, char *fpath) {
+    if (fpath == NULL) fpath = "";
     char buf[BUF_SIZE] = {0};
-    sprintf(buf, "GET / HTTP/1.1\r\nHost: %s\r\n\r\n", url);
+    sprintf(buf, "GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n", fpath, host);
     send(client, buf, strlen(buf), 0);
 }
 
@@ -39,6 +49,10 @@ int main(int argc, char** argv) {
             exit(1);
     }
 
+    char *host, *fpath;
+    get_fpath(url, &host, &fpath);
+    printf("url: %s\nhost: %s\nfpath: %s\n", url, host, fpath);
+
     int status, sock, numbytes;
     struct addrinfo hints, *sinf;
 
@@ -48,7 +62,7 @@ int main(int argc, char** argv) {
     hints.ai_flags = AI_PASSIVE;
 
     //get address info, error checking
-    if ((status = getaddrinfo(url, port_num, &hints, &sinf))) {
+    if ((status = getaddrinfo(host, port_num, &hints, &sinf))) {
         fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
         exit(1);
     }
@@ -69,11 +83,11 @@ int main(int argc, char** argv) {
         break;
     }
     
-    printf("client: connecting to %s\n", url);
+    printf("client: connecting to %s\n", host);
 
     freeaddrinfo(sinf);
 
-    send_GET(sock, url);
+    send_GET(sock, host, fpath);
 
     char header[BUF_SIZE] = {'\0'};
     char search[] = "\r\n\r\n";
