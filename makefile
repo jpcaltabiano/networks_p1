@@ -1,6 +1,6 @@
 all: http_client http_server
 
-CXXFLAGS = -g -Wall
+CXXFLAGS = -g -Wall -std=gnu99
 
 http_client: http_client.o
 	gcc $(CXXFLAGS) http_client.o -o http_client
