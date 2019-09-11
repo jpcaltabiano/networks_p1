@@ -118,6 +118,10 @@ int main(int argc, char** argv) {
 
         for (int i = 0; totalbytes < body_size; i++) {
             numbytes = recv(sock, &body[i], 1, 0);
+            //handling unicode chars messing with wpi's linux server terminal
+            if(body[i] == '\302' || body[i] == '\220') {
+                body[i] = 'e';
+            }
             totalbytes += numbytes;
         }
         body[body_size] = '\0';
